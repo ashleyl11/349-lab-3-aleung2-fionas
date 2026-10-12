@@ -2,6 +2,7 @@
 
 #include <gpio.h>
 #include <keypad_driver.h>
+#include <systick.h>
 
 #define KEYPAD_COL1_PORT GPIO_B
 #define KEYPAD_COL1_PIN  6
@@ -58,39 +59,50 @@ int read_row(int row){
     return 1;
 }
 
-char keypad_read() {
-    static char prev_key = '\0';
-    char curr_key = '\0';
+char keypad_scan() { // helper
     //sets col 1 to low first and reads every row to see if it is set low
     // if it is set low that means the button is pressed
     set_col(1);
-    for (volatile int i = 0; i < 100000; i++);
-    if (read_row(1) == 0) curr_key = '1';
-    if (read_row(2) == 0) curr_key = '4';
-    if (read_row(3) == 0) curr_key = '7';
-    if (read_row(4) == 0) curr_key = '*';
+    systick_delay(1);
+    if (read_row(1) == 0) return '1';
+    if (read_row(2) == 0) return '4';
+    if (read_row(3) == 0) return '7';
+    if (read_row(4) == 0) return '*';
 
     set_col(2);
-    for (volatile int i = 0; i < 100000; i++);
-    if (read_row(1) == 0) curr_key = '2';
-    if (read_row(2) == 0) curr_key = '5';
-    if (read_row(3) == 0) curr_key = '8';
-    if (read_row(4) == 0) curr_key = '0';
+    systick_delay(1);
+    if (read_row(1) == 0) return '2';
+    if (read_row(2) == 0) return '5';
+    if (read_row(3) == 0) return '8';
+    if (read_row(4) == 0) return '0';
 
     set_col(3);
-    for (volatile int i = 0; i < 100000; i++);
-    if (read_row(1) == 0) curr_key = '3';
-    if (read_row(2) == 0) curr_key = '6';
-    if (read_row(3) == 0) curr_key = '9';
-    if (read_row(4) == 0) curr_key = '#';
+    systick_delay(1);
+    if (read_row(1) == 0) return '3';
+    if (read_row(2) == 0) return '6';
+    if (read_row(3) == 0) return '9';
+    if (read_row(4) == 0) return '#';
+
+    return '\0';
+}
+
+
+char keypad_read() {
+    static char prev_key = '\0';
+    char first_read = keypad_scan();
+    systick_delay(10);
+    char second_read = keypad_scan();
+
+    // debouncing logic
 
     // only returns the key if it wasn't already being pressed
-    if (curr_key != '\0' && prev_key == '\0') {
-        prev_key = curr_key;
-        for (volatile int i = 0; i < 100000; i++);
-        return curr_key;
+    if (first_read != '\0' && prev_key == '\0') {
+        if (first_read == second_read){
+            prev_key = first_read;
+            return first_read;
+        }
     }
-    prev_key = curr_key;
+    prev_key = second_read;
 
     return '\0';
 }

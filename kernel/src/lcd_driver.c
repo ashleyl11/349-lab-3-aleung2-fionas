@@ -3,6 +3,7 @@
 #include <i2c.h>
 #include <lcd_driver.h>
 #include <printk.h>
+#include <systick.h>
 
 #define PCF8574_ADDR 0x27
 #define LCD_BACKLIGHT 0x08 //P3
@@ -31,25 +32,26 @@ void lcd_send_byte(uint8_t byte, uint8_t rs) {
     i2c_master_write(data, 4, PCF8574_ADDR);
 }
 void lcd_driver_init() {
+    // wait for more than 15 ms
+    systick_delay(16);
+
     i2c_master_init(100);
-    for (volatile int i = 0; i < 1000000; i++);
 
     //initializing HD44780U
     //interface is 8 bits long
     send_lcd_instr(0x3, 0);
-    for (volatile int i = 0; i < 100000; i++);
+    systick_delay(5); // wait > 4.1 ms 
+
     send_lcd_instr(0x3, 0);
-    for (volatile int i = 0; i < 100000; i++);
+    systick_delay(1); // wait > 100 us
+
     send_lcd_instr(0x3, 0);
-    for (volatile int i = 0; i < 10000; i++);
+    
     //sets interface to 4 bits long
     send_lcd_instr(0x2, 0);
-    for (volatile int i = 0; i < 10000; i++);
     
     // clears display
-    lcd_send_byte(0x01, 0);
-    for (volatile int i = 0; i < 1000000; i++);
-    
+    lcd_clear();
 }
 
 void lcd_print(char *input){
@@ -72,5 +74,5 @@ void lcd_set_cursor(uint8_t row, uint8_t col){
 
 void lcd_clear() {
     lcd_send_byte(0x01, 0);
-    for (volatile int i = 0; i < 1000000; i++);
+    systick_delay(2000);
 }

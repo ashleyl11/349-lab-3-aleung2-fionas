@@ -59,7 +59,7 @@ struct uart_reg_map {
  * @param baud Baud rate
  */
 void uart_polling_init (int baud){
-    (void) baud; /* This line is simply here to suppress the Unused Variable Error. */
+    // (void) baud; /* This line is simply here to suppress the Unused Variable Error. */
     //              /* You should remove this line in your final implementation */
 
     struct uart_reg_map *uart = UART2_BASE;

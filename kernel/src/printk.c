@@ -24,8 +24,8 @@
 static char digits[] = "0123456789abcdef";
 
 void uart_wrapper ( char c ) {
-  // @TODO change to interrupt based put byte
-  uart_put_byte( c );
+  uart_put_byte(c);
+  // uart_polling_put_byte( c );
 
 }
 

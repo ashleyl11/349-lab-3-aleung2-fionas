@@ -94,7 +94,7 @@ uint32_t buf_empty(buffer_t *buf){
   return (buf->occupied == 0);
 }
 
-int32_t buf_put(buffer_t *buf, char c){
+int buf_put(buffer_t *buf, char c){
   if (buf_full(buf)){
     return -1;
   }
@@ -104,10 +104,10 @@ int32_t buf_put(buffer_t *buf, char c){
   // buf size power of 2 -> use & (buffer_size - 1)
   buf->head_idx = (buf->head_idx + 1) & (BUFFER_SIZE - 1);
   buf->occupied++;
-  return 1;
+  return 0;
 }
 
-int32_t buf_get(buffer_t *buf, char *c){
+int buf_get(buffer_t *buf, char *c){
   if (buf_empty(buf)){
     return -1;
   }
@@ -137,43 +137,107 @@ void uart_init(UNUSED int baud){
   uart->CR1 |= TE;
   uart->CR1 |= RE;
 
-  // receive interrupt enable on by default
-  uart->CR1 |= RXNEIE;
-
   // transmit interrupt enable off by default
   uart->CR1 &= ~TXEIE;  
+
+  // receive interrupt enable on by default
+  uart->CR1 |= RXNEIE;
 
   // ennable uart2 interrupt in nvic
   nvic_irq(38, IRQ_ENABLE);
 
   // initialize buffers
   for (uint32_t i = 0; i < BUFFER_SIZE; i++){
-    RX_BUFFER.data[i] = 0;
     TX_BUFFER.data[i] = 0;
+    RX_BUFFER.data[i] = 0;
   }
 
-  RX_BUFFER.head_idx = 0;
-  RX_BUFFER.tail_idx = 0;
-  RX_BUFFER.occupied = 0;
   TX_BUFFER.head_idx = 0;
   TX_BUFFER.tail_idx = 0;
   TX_BUFFER.occupied = 0;
+  RX_BUFFER.head_idx = 0;
+  RX_BUFFER.tail_idx = 0;
+  RX_BUFFER.occupied = 0;
   
   return;
 }
 
 int uart_put_byte(UNUSED char c){
-  return -1;
+  struct uart_reg_map *uart = UART2_BASE;
+  // prevent handler from accessing buffer at same time
+  uart->CR1 &= ~TXEIE; // disable tx interrupt
+
+  int ret = buf_put(&TX_BUFFER, c);
+  if (ret == 0) {
+    uart->CR1 |= TXEIE;
+  }
+
+  return ret;
 }
 
 int uart_get_byte(UNUSED char *c){
-  return -1;
-}
+  struct uart_reg_map *uart = UART2_BASE;
+  // prevent handler from accessing buffer at same time
+  uart->CR1 &= ~RXNEIE; // disable rx interrupt
+  
+  int ret = buf_get(&RX_BUFFER, c);
+  if (ret == 0) {
+    uart->CR1 |= RXNEIE;
+  }
 
-void uart_irq_handler(){
-
+  return ret;
 }
 
 void uart_flush(){
+  struct uart_reg_map *uart = UART2_BASE;
+  char c;
+  uart->CR1 &= ~TXEIE; // disable tx interrupt
 
+  while (buf_get(&TX_BUFFER, &c) == 0){
+    while (!(uart->SR & TXE)){
+        continue;
+    }
+    uart->DR = c;
+  }
+
+  // wait for last byte to finish
+  while (!(uart->SR & TE)){
+    continue;
+  }
+
+}
+
+void USART2_TX_IRQHandler(){
+  struct uart_reg_map *uart = UART2_BASE;
+  char c;
+
+  if (buf_get(&TX_BUFFER, &c) == 0){
+    uart->DR = c;
+  }
+  if (buf_empty(&TX_BUFFER)) {
+    uart->CR1 &= ~TXEIE;
+  }
+}
+
+void USART2_RX_IRQHandler(){
+  struct uart_reg_map *uart = UART2_BASE;
+  volatile char c = uart->DR;
+
+  buf_put(&RX_BUFFER, c);
+  if (buf_full(&RX_BUFFER)){
+    uart->CR1 &= ~RXNEIE;
+  }
+}
+
+void USART2_IRQHandler(){
+  struct uart_reg_map *uart = UART2_BASE;
+
+  if (uart->SR & TXE){
+    USART2_TX_IRQHandler();
+  }
+  if (uart->SR & RXNE){
+    USART2_RX_IRQHandler();
+  }
+
+  nvic_clear_pending(38);
 }

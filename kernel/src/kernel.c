@@ -14,6 +14,7 @@ int kernel_main( void ) {
   init_349(); // DO NOT REMOVE THIS LINE
 
   systick_init();
+  uart_init (115200);
 
   return 0;
 }

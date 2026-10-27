@@ -9,6 +9,10 @@
 
 #include <arm.h>
 #include <kernel.h>
+#include <systick.h>
+#include <uart.h>
+#include <printk.h>
+
 
 int kernel_main( void ) {
   init_349(); // DO NOT REMOVE THIS LINE
@@ -16,5 +20,6 @@ int kernel_main( void ) {
   systick_init();
   uart_init (115200);
 
+  enter_user_mode();
   return 0;
 }

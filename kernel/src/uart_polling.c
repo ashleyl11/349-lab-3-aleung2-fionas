@@ -51,14 +51,15 @@ struct uart_reg_map {
 /** @brief Read data register not empty bit for UART Status Register*/
 #define RXNE (1 << 5)
 
-
+/** @brief Marks a parameter as intentionally unused */
+#define UNUSED __attribute__((unused))
 
 /**
  * @brief initializes UART to given baud rate with 8-bit word length, 1 stop bit, 0 parity bits
  *
  * @param baud Baud rate
  */
-void uart_polling_init (int baud){
+void uart_polling_init (UNUSED int baud){
     // (void) baud; /* This line is simply here to suppress the Unused Variable Error. */
     //              /* You should remove this line in your final implementation */
 

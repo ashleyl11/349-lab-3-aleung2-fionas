@@ -67,7 +67,7 @@ ivt:
 .word   spin                /* 51 IRQ35 SPI1   */
 .word   spin                /* 52 IRQ36 SPI2   */
 .word   spin                /* 53 IRQ37 USART1 */
-.word   spin                /* 54 IRQ38 USART2 */
+.word   USART2_IRQHandler   /* 54 IRQ38 USART2 */
 .word   spin                /* 55 IRQ39 USART3   */
 .word   spin                /* 56 IRQ40 EXTI15_10   */
 .word   spin                /* 57 IRQ41 RTCAlarm */
@@ -166,6 +166,9 @@ loop:
 
 start:
   bl kernel_main
+
+hang:
+  b hang 
   
 
 .thumb_func
@@ -176,4 +179,5 @@ _sys_tick_asm_:
 .thumb_func
 .global _svc_asm_handler_
 _svc_asm_handler_:
-  bkpt
+  mrs r0, psp
+  b svc_c_handler

@@ -14,62 +14,90 @@
 
 #include "../../kernel/include/svc_num.h"
 
+.thumb_func
 .global _start
 _start:
   bkpt
 
+.thumb_func
 .global _sbrk
 _sbrk:
-  bkpt
+  svc   SVC_SBRK
+  bx    lr
 
+.thumb_func
 .global _write
 _write:
-  bkpt
+  svc   SVC_WRITE
+  bx    lr
 
+.thumb_func
 .global _close
 _close:
-  bkpt
+  svc   SVC_CLOSE
+  bx    lr
 
+.thumb_func
 .global _fstat
 _fstat:
-  bkpt
+  svc   SVC_FSTAT
+  bx    lr
 
+.thumb_func
 .global _isatty
 _isatty:
-  bkpt
+  svc   SVC_ISATTY
+  bx    lr
 
+.thumb_func
 .global _lseek
 _lseek:
-  bkpt
+  svc   SVC_LSEEK 
+  bx    lr
 
+.thumb_func
 .global _read
 _read:
-  bkpt
+  svc   SVC_READ
+  bx    lr
 
+.thumb_func
 .global _gettimeofday
 _gettimeofday:
   bkpt
 
+.thumb_func
 .global _times
 _times:
   bkpt
 
+.thumb_func
 .global _getpid
 _getpid:
-  bkpt
+  svc   SVC_GET_PID
+  bx    lr
 
+.thumb_func
 .global _kill
 _kill:
-  bkpt
+  svc   SVC_KILL
+  bx    lr
 
+
+.thumb_func
 .global _exit
 _exit:
-  bkpt
+  svc   SVC_EXIT
+  bx    lr
 
+.thumb_func
 .global servo_enable
 servo_enable:
-  bkpt
+  svc   SVC_SERVO_ENABLE
+  bx    lr
 
+.thumb_func
 .global servo_set
 servo_set:
-  bkpt
+  svc   SVC_SERVO_SET
+  bx    lr

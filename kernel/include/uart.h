@@ -21,4 +21,6 @@ int uart_write( int file, char *ptr, int len );
 
 int uart_read(int file, char *ptr, int len );
 
+void uart_flush(void);
+
 #endif /* _UART_H_ */

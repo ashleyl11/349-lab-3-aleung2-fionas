@@ -27,9 +27,9 @@
 /** @brief Number base for decimal digits */
 #define DECIMAL 10
 
-/** @brief Start of the user heap (defined in the linker script) */
+/** @brief Start of the user heap */
 extern char __heap_low;
-/** @brief End of the user heap (defined in the linker script) */
+/** @brief End of the user heap */
 extern char __heap_top;
 
 /** @brief Current end of the allocated part of the user heap */
@@ -80,7 +80,7 @@ static void int_to_str(int num, char *buf){
     num = -num;
   }
 
-  // collect digits backwards (ones place first)
+  // collect digits backwards
   while (num > 0) {
     digits[count++] = '0' + (num % DECIMAL);
     num /= DECIMAL;

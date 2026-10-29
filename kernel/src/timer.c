@@ -5,13 +5,25 @@
  *
  * @date
  *
- * @author
+ * @author ashley leung (aleung2), fiona shi (fionas)
  */
 
 #include <unistd.h>
 #include <timer.h>
+#include <rcc.h>
+#include <nvic.h>
 
-#define UNUSED __attribute__((unused))
+/** @brief First general-purpose timer; TIM2-TIM5 use RCC bits 0-3 */
+#define FIRST_TIMER 2
+
+/** @brief Counter enable bit in CR1 */
+#define TIM_CR1_CEN (1 << 0)
+/** @brief Update interrupt enable bit in DIER */
+#define TIM_DIER_UIE (1 << 0)
+/** @brief Update interrupt flag in SR */
+#define TIM_SR_UIF (1 << 0)
+/** @brief Update generation bit in EGR */
+#define TIM_EGR_UG (1 << 0)
 
 /** @brief tim2_5 */
 struct tim2_5 {
@@ -36,20 +48,34 @@ struct tim2_5 {
 
 struct tim2_5* const timer_base[] = {(void *)0x0,   // N/A - Don't fill out
                                      (void *)0x0,   // N/A - Don't fill out
-                                     (void *)-1,    // TODO: fill out address for TIMER 2
-                                     (void *)-1,    // TODO: fill out address for TIMER 3
-                                     (void *)-1,    // TODO: fill out address for TIMER 4
-                                     (void *)-1};   // TODO: fill out address for TIMER 5
+                                     (void *)0x40000000,    // TODO: fill out address for TIMER 2
+                                     (void *)0x40000400,    // TODO: fill out address for TIMER 3
+                                     (void *)0x40000800,    // TODO: fill out address for TIMER 4
+                                     (void *)0x40000C00};   // TODO: fill out address for TIMER 5
+
+static const int timer_irq[] = {0, 0, TIM2_INT_NUM, TIM3_INT_NUM,
+  TIM4_INT_NUM, TIM5_INT_NUM};
 
 
-void timer_init(UNUSED int timer, UNUSED uint32_t prescalar, UNUSED uint32_t period) {
+void timer_init(int timer, uint32_t prescalar, uint32_t period) {
+  struct tim2_5 *tim = timer_base[timer];
+  struct rcc_reg_map *rcc = RCC_BASE;
 
+  rcc->apb1_enr |= 1 << (timer - FIRST_TIMER);
+  tim->psc = prescalar - 1;
+  tim->arr = period - 1;
+  tim->egr = TIM_EGR_UG;
+  tim->sr = ~TIM_SR_UIF;
+  tim->dier |= TIM_DIER_UIE;
+  nvic_irq(timer_irq[timer], IRQ_ENABLE);
+  tim->cr1 |= TIM_CR1_CEN;
 }
 
-void timer_disable(UNUSED int timer) {
-
+void timer_disable(int timer) {
+  struct rcc_reg_map *rcc = RCC_BASE;
+  rcc->apb1_enr &= ~(1 << (timer - FIRST_TIMER));
 }
 
-void timer_clear_interrupt_bit(UNUSED int timer) {
-
+void timer_clear_interrupt_bit(int timer) {
+  timer_base[timer]->sr = ~TIM_SR_UIF;
 }

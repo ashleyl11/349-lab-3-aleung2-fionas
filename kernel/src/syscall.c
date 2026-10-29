@@ -1,11 +1,11 @@
 /**
- * @file 
+ * @file syscall.c
  *
- * @brief      
+ * @brief kernel system calls for newlib
  *
- * @date       
+ * @date oct 29, 2026      
  *
- * @author 
+ * @author ashley leung (aleung2), fiona shi (fionas)
  */
 
 #include <unistd.h>
@@ -35,8 +35,10 @@ extern char __heap_top;
 /** @brief Current end of the allocated part of the user heap */
 static char *heap_break = &__heap_low;
 
-#define UNUSED __attribute__((unused))
-
+/** @brief ASCII end-of-transmission (Ctrl-D) */
+#define EOT 4
+/** @brief ASCII delete */
+#define DEL 127
 
 void *sys_sbrk(int incr){
   char *prev_break = heap_break;
@@ -60,8 +62,53 @@ int sys_write(int file, char *ptr, int len){
   return bytes_written;
 }
 
-int sys_read(UNUSED int file, UNUSED char *ptr, UNUSED int len){
-  return -1;
+static char get_char_blocking(void){
+  char c;
+  while (uart_get_byte(&c) != 0) {
+    continue;
+  }
+  return c;
+}
+
+static void put_char_blocking(char c){
+  while (uart_put_byte(c) != 0) {
+    continue;
+  }
+}
+
+int sys_read(int file, char *ptr, int len){
+  int count = 0;
+  if (file != STDIN_FD || len < 0) {
+    return -1;
+  }
+
+  while (count < len) {
+    char c = get_char_blocking();
+    if (c == EOT) {
+      return count;
+    }
+    if (c == '\n') {
+      continue;
+    }
+    if (c == '\b' || c == DEL) {
+      if (count > 0) {
+        count--;
+        put_char_blocking('\b');
+        put_char_blocking(' ');
+        put_char_blocking('\b');
+      }
+      continue;
+    }
+    if (c == '\r') {
+      c = '\n';
+    }
+    ptr[count++] = c;
+    put_char_blocking(c);
+    if (c == '\n') {
+      return count;
+    }
+  }
+  return count;
 }
 
 static void int_to_str(int num, char *buf){

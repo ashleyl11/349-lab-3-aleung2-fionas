@@ -1,17 +1,18 @@
 /**
- * @file 
+ * @file svc_handler.c
  *
- * @brief      
+ * @brief  decodes the system call number from the svc instruction    
  *
- * @date       
+ * @date  oct 29, 2026 
  *
- * @author     
+ * @author ashley leung (aleung2), fiona shi (fionas)    
  */
 
 #include <stdint.h>
 #include <debug.h>
 #include <syscall.h>
 #include <svc_num.h>
+#include <servok.h>
 
 /** @brief Registers the hardware saves on the stack when svc runs */
 typedef struct {
@@ -55,6 +56,12 @@ void svc_c_handler(stack_frame_t *frame) {
     break;
   case SVC_ISATTY:
     frame->r0 = 1;
+    break;
+    case SVC_SERVO_ENABLE:
+    frame->r0 = sys_servo_enable((uint8_t)frame->r0, (uint8_t)frame->r1);
+    break;
+  case SVC_SERVO_SET:
+    frame->r0 = sys_servo_set((uint8_t)frame->r0, (uint8_t)frame->r1);
     break;
   default:
     DEBUG_PRINT("Not implemented: svc num %d\n", svc_number);

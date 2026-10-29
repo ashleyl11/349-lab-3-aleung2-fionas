@@ -7,6 +7,7 @@
 #define BITS_PER_PUPD 2
 #define BITS_PER_TYPE 1
 #define GPIOS_PER_ALT_REG 8
+#define FIELD_MASK(bits) ((1u << (bits)) - 1)
 
 
 /** @brief GPIO Registers - A through G */
@@ -44,15 +45,22 @@ void gpio_init(gpio_port port, unsigned int num, unsigned int mode, unsigned int
 
     gpio_reg *gp = gpio_regs[port];  /* Base address of GPIO[port] (A - G) */
 
+    gp->mode &= ~(FIELD_MASK(BITS_PER_MODE) << (num * BITS_PER_MODE));
     gp->mode |= (mode << (num * BITS_PER_MODE));
+   
+    gp->o_type &= ~(FIELD_MASK(BITS_PER_TYPE) << (num * BITS_PER_TYPE));
     gp->o_type |= (otype << (num * BITS_PER_TYPE));
+
+    gp->o_speed &= ~(FIELD_MASK(BITS_PER_SPEED) << (num * BITS_PER_SPEED));
     gp->o_speed |= (speed << (num * BITS_PER_SPEED));
+
+    gp->pu_pd &= ~(FIELD_MASK(BITS_PER_PUPD) << (num * BITS_PER_PUPD));
     gp->pu_pd |= (pupd << (num * BITS_PER_PUPD));
-
-    int high = num >= GPIOS_PER_ALT_REG;        /* Ports 0-7 are in Config Low Reg.
-                                            Ports 8-15 are in Config High Reg */
-
-    int shift_num = num % 8;
+   
+    int high = num >= GPIOS_PER_ALT_REG; 
+   
+    int shift_num = num % GPIOS_PER_ALT_REG;
+    gp->afr[high] &= ~(FIELD_MASK(BITS_PER_ALT) << (shift_num * BITS_PER_ALT));
     gp->afr[high] |= (alt << (shift_num * BITS_PER_ALT));
 }
 
